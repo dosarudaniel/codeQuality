@@ -1,0 +1,449 @@
+studentId,studentUserName,challenge,Score,Code
+0,referinta,ECTEL2024,80,"import java.util.*;
+
+class Position {
+    int x, y;
+
+    Position(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    void move(char direction, int N) {
+        switch (direction) {
+            case 'U': moveUp(N); break;
+            case 'D': moveDown(N); break;
+            case 'L': moveLeft(N); break;
+            case 'R': moveRight(N); break;
+        }
+    }
+
+    private void moveUp(int N) {
+        this.y = Math.min(this.y + 1, N);
+    }
+
+    private void moveDown(int N) {
+        this.y = Math.max(this.y - 1, 1);
+    }
+
+    private void moveLeft(int N) {
+        this.x = Math.max(this.x - 1, 1);
+    }
+
+    private void moveRight(int N) {
+        this.x = Math.min(this.x + 1, N);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Position position = (Position) o;
+        return x == position.x && y == position.y;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
+    }
+}
+
+class CharacterManager {
+    private List<Character> characters;
+
+    CharacterManager(List<Character> characters) {
+        this.characters = characters;
+    }
+
+    public void addCharacter(Character character) {
+        this.characters.add(character);
+    }
+
+    void moveCharacters(int N) {
+        characters.forEach(character -> character.move(N));
+    }
+
+    boolean checkForCollision(Character pacMan) {
+        return characters.stream()
+                .filter(character -> character instanceof Ghost)
+                .anyMatch(ghost -> pacMan.position.equals(ghost.position));
+    }
+}
+
+class GameOutput {
+    static void printPositions(PacMan pacMan, List<Ghost> ghosts) {
+        System.out.println(pacMan.position.x + "" "" + pacMan.position.y);
+        ghosts.sort((c1, c2) -> {
+            if (c1.position.x != c2.position.x) return c1.position.x - c2.position.x;
+            if (c1.position.y != c2.position.y) return c1.position.y - c2.position.y;
+            return c1.type - c2.type;
+        });
+
+        for (Ghost ghost : ghosts) {
+            System.out.println(ghost.type + "" "" + ghost.position.x + "" "" + ghost.position.y);
+        }
+    }
+}
+
+interface Movable {
+    void move(int N);
+}
+
+abstract class Character implements Movable {
+    Position position;
+
+    Character(int x, int y) {
+        this.position = new Position(x, y);
+    }
+
+    public abstract void move(int N);
+}
+
+class PacMan extends Character {
+    char[] movements;
+    int currentMove;
+
+    PacMan(int x, int y, char[] movements) {
+        super(x, y);
+        this.movements = movements;
+        this.currentMove = 0;
+    }
+
+    public void move(int N) {
+        if (currentMove < movements.length) {
+            position.move(movements[currentMove], N);
+            currentMove++;
+        }
+    }
+}
+
+class Ghost extends Character {
+    char type; // 'R' for red, 'B' for blue
+    boolean movingLeftOrDown; // True if moving left (for red) or down (for blue)
+
+    Ghost(int x, int y, int N, char type) {
+        super(x, y);
+        this.type = type;
+        // Initialize the movingLeftOrDown depending on the initial position and type
+        this.movingLeftOrDown = (type == 'R' ? (x != N) : (y != 1));
+    }
+
+    public void move(int N) {
+        checkEdgeAndReverseDirection(N);
+        position.move(getMoveDirection(), N);
+    }
+
+    private void checkEdgeAndReverseDirection(int N) {
+        if (isAtEdge(N)) {
+            reverseDirection();
+        }
+    }
+
+    private boolean isAtEdge(int N) {
+        if (type == 'R') {
+            return position.x == 1 || position.x == N;
+        } else { // type == 'B'
+            return position.y == 1 || position.y == N;
+        }
+    }
+
+    private void reverseDirection() {
+        movingLeftOrDown = !movingLeftOrDown;
+    }
+
+    private char getMoveDirection() {
+        if (type == 'R') {
+            return movingLeftOrDown ? 'L' : 'R';
+        } else {
+            return movingLeftOrDown ? 'D' : 'U';
+        }
+    }
+}
+
+class GameBoard {
+    int N;
+    PacMan pacMan;
+    List<Ghost> ghosts;
+    private CharacterManager characterManager;
+
+    GameBoard(int N, PacMan pacMan, List<Ghost> ghosts) {
+        this.N = N;
+        this.pacMan = pacMan;
+        this.ghosts = ghosts;
+        this.characterManager = new CharacterManager(new ArrayList<>(ghosts));
+        characterManager.addCharacter(pacMan); // Add PacMan to character manager
+    }
+
+    void runSimulation() {
+        for (int i = 0; i < pacMan.movements.length; i++) {
+            characterManager.moveCharacters(N);
+            if (characterManager.checkForCollision(pacMan)) {
+                break;
+            }
+        }
+        GameOutput.printPositions(pacMan, ghosts);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        int N = scanner.nextInt(); // Size of the board
+        int pacManX = scanner.nextInt();
+        int pacManY = scanner.nextInt();
+        int R = scanner.nextInt(); // Number of red ghosts
+
+        List<Ghost> ghosts = new ArrayList<>();
+        for (int i = 0; i < R; i++) {
+            int ghostX = scanner.nextInt();
+            int ghostY = scanner.nextInt();
+            ghosts.add(new Ghost(ghostX, ghostY, N, 'R'));
+        }
+
+        int B = scanner.nextInt(); // Number of blue ghosts
+        for (int i = 0; i < B; i++) {
+            int ghostX = scanner.nextInt();
+            int ghostY = scanner.nextInt();
+            ghosts.add(new Ghost(ghostX, ghostY, N, 'B'));
+        }
+
+        int M = scanner.nextInt(); // Number of moves PacMan will make
+        char[] movements = new char[M];
+        for (int i = 0; i < M; i++) {
+            movements[i] = scanner.next().charAt(0);
+        }
+
+        scanner.close();
+
+        PacMan pacMan = new PacMan(pacManX, pacManY, movements);
+
+        GameBoard gameBoard = new GameBoard(N, pacMan, ghosts);
+        gameBoard.runSimulation();
+    }
+}"
+1,student_1,ECTEL2024,?,"import java.util.*;
+
+// dupa iteratia 7
+
+abstract class Character implements Comparable<Character> {
+    protected int x, y; // x for column, y for row
+    protected String symbol;
+
+    public Character(int x, int y, String symbol) {
+        this.x = x;
+        this.y = y;
+        this.symbol = symbol;
+    }
+
+    public abstract void move(GameBoard board);
+
+    public String getPosition() {
+        return x + "" "" + y;
+    }
+
+    @Override
+    public int compareTo(Character other) {
+        // First, compare by column (x value)
+        if (this.x != other.x) {
+            return this.x - other.x;
+        }
+        // Then, compare by row (y value)
+        if (this.y != other.y) {
+            return this.y - other.y;
+        }
+        // Finally, if positions are the same, blue ghosts go before red ghosts
+        return this.symbol.compareTo(other.symbol);
+    }
+
+    public boolean isColliding(Character other) {
+        return this.x == other.x && this.y == other.y;
+    }
+}
+
+class PacMan extends Character {
+    public PacMan(int x, int y) {
+        super(x, y, ""P"");
+    }
+
+    @Override
+    public void move(GameBoard board) {
+        // PacMan's move logic will be handled in the GameSimulator to react to user input
+    }
+
+    @Override
+    public String getPosition() {
+        // Only return the coordinates for PacMan
+        return x + "" "" + y;
+    }
+}
+
+class RedGhost extends Character {
+    private boolean movingLeft = true;
+
+    public RedGhost(int x, int y) {
+        super(x, y, ""R"");
+    }
+
+    @Override
+    public void move(GameBoard board) {
+        if (movingLeft) {
+            if (x == 1) {
+                movingLeft = false;
+                x++;
+            } else {
+                x--;
+            }
+        } else {
+            if (x == board.getSize()) {
+                movingLeft = true;
+                x--;
+            } else {
+                x++;
+            }
+        }
+    }
+}
+
+class BlueGhost extends Character {
+    private boolean movingDown = true;
+
+    public BlueGhost(int x, int y) {
+        super(x, y, ""B"");
+    }
+
+    @Override
+    public void move(GameBoard board) {
+        // If moving down and not at the bottom edge, move down.
+        // If at the bottom edge, switch direction to up.
+        if (movingDown) {
+            if (y == 1) {
+                movingDown = false;
+                y++;
+            } else {
+                y--;
+            }
+        } else {
+            // If moving up and not at the top edge, move up.
+            // If at the top edge, switch direction to down.
+            if (y == board.getSize()) {
+                movingDown = true;
+                y--;
+            } else {
+                y++;
+            }
+        }
+    }
+}
+
+class GameBoard {
+    private int size;
+    private List<Character> characters;
+    private PacMan pacman;
+
+    public GameBoard(int size) {
+        this.size = size;
+        characters = new ArrayList<>();
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void addCharacter(Character character) {
+        characters.add(character);
+        if (character instanceof PacMan) {
+            pacman = (PacMan) character;
+        }
+    }
+
+    public void simulateMoves(String[] moves) {
+        for (String move : moves) {
+            // Move PacMan
+            movePacMan(move);
+
+            // Move all ghosts
+            for (Character character : characters) {
+                if (!(character instanceof PacMan)) {
+                    character.move(this);
+                }
+            }
+
+            // Check for collisions
+            if (isPacManDead()) {
+                // System.out.println(""PacMan is dead!"");
+                return;
+            }
+        }
+    }
+
+    private void movePacMan(String direction) {
+        switch (direction) {
+            case ""U"": pacman.y = Math.min(pacman.y + 1, size); break;
+            case ""D"": pacman.y = Math.max(pacman.y - 1, 1); break;
+            case ""L"": pacman.x = Math.max(pacman.x - 1, 1); break;
+            case ""R"": pacman.x = Math.min(pacman.x + 1, size); break;
+        }
+    }
+
+    private boolean isPacManDead() {
+        for (Character character : characters) {
+            if (character != pacman && pacman.isColliding(character)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void printPositions() {
+        Collections.sort(characters);
+        // First, print PacMan's position without the symbol
+        System.out.println(pacman.getPosition());
+        // Then print the rest of the characters with their symbols
+        characters.stream()
+                .filter(character -> !(character instanceof PacMan))
+                .forEach(character -> System.out.println(character.symbol + "" "" + character.getPosition()));
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+        int size = scan.nextInt();
+        GameBoard board = new GameBoard(size);
+
+        int pacmanX = scan.nextInt();
+        int pacmanY = scan.nextInt();
+        board.addCharacter(new PacMan(pacmanX, pacmanY));
+
+        int r = scan.nextInt(); // Number of red ghosts
+        for (int i = 0; i < r; i++) {
+            int x = scan.nextInt();
+            int y = scan.nextInt();
+            board.addCharacter(new RedGhost(x, y));
+        }
+
+        int a = scan.nextInt(); // Number of blue ghosts
+        for (int i = 0; i < a; i++) {
+            int x = scan.nextInt();
+            int y = scan.nextInt();
+            board.addCharacter(new BlueGhost(x, y));
+        }
+
+        int m = scan.nextInt(); // Number of moves for PacMan
+        String[] moves = new String[m];
+        for (int i = 0; i < m; i++) {
+            moves[i] = scan.next();
+        }
+
+        // Start simulation
+        board.simulateMoves(moves);
+
+        // Output the final positions of PacMan and ghosts
+        board.printPositions();
+
+        scan.close();
+    }
+}
+
+"
