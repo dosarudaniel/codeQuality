@@ -1,5 +1,5 @@
 # A Code Analysis Tool to Help Students in the Age of Generative AI :
-This repo contains the SimplePMD application used for paper [A Code Analysis Tool to Help Students in the Age of Generative AI](https://link.springer.com/chapter/10.1007/978-3-031-72312-4_31)
+This repository contains the SimplePMD application used in paper [A Code Analysis Tool to Help Students in the Age of Generative AI](https://link.springer.com/chapter/10.1007/978-3-031-72312-4_31)
 
 ### For students (individual use)
 #### How to run the web version and assess your code quality OOP metrics :
