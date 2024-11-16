@@ -120,12 +120,12 @@ One more class was extended.
         </properties>
     </rule>
 
-    <rule name="MethodsPerClass"
+    <!-- <rule name="MethodsPerClass"
          language="java"
          message="Custom Violation!"
          class="net.sourceforge.pmd.examples.java.rules.MyRule" >
        <priority>3</priority>
-    </rule>
+    </rule> -->
 
 
 </ruleset>

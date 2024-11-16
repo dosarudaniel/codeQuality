@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import subprocess
 import csv, os
 
-java_tmp_file = "tmp/Main.java"
+java_tmp_file = "Main.java"
 
 app = Flask(__name__)
 
@@ -70,8 +70,15 @@ def run_jar():
     
     print(f"Adding a new row in responses.csv")
 
+    csv_file_path = ''
     # File path to the CSV file
-    csv_file_path = 'resources\\input\\responses.csv'
+    if os.name == 'nt':  # Windows
+        csv_file_path = os.path.join('resources', 'input', 'responses.csv')
+    else:  # Linux and other OS
+        csv_file_path = 'resources/input/responses.csv'
+
+    print(f"File path: {csv_file_path}")
+
 
     last_row = None
     try:
@@ -135,7 +142,14 @@ def run_jar():
         print(f"error while running jar file {str(e)}")
 
 
-    csv_output_file_path = 'resources\\output\\output.csv'
+    csv_output_file_path = ''
+
+    if os.name == 'nt':  # Windows
+        csv_output_file_path = os.path.join('resources', 'output', 'output.csv')
+    else:  # Linux or other OS
+        csv_output_file_path = os.path.join('resources', 'output', 'output.csv')
+
+    print(f"CSV Output File Path: {csv_output_file_path}")
 
     code_quality_metrics = None
     try:
